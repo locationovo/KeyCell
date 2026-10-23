@@ -1,0 +1,66 @@
+name: BuildKeyCell
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Clone J2ME-For-Web
+      run: git clone https://github.com/lingfeng11111/J2ME-For-Web.git
+
+    - name: Cache NPM Dependencies
+      uses: actions/cache@v4
+      id: npm-cache
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('J2ME-For-Web/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Build J2ME-For-Web
+      run: |
+        cd J2ME-For-Web
+        npm install --prefer-offline --no-audit
+        npm run build || echo "Build failed"
+        cd ..
+        mkdir -p dist
+        cp -r J2ME-For-Web/dist/* dist/ || cp -r J2ME-For-Web/build/* dist/ || true
+        rm -rf dist/tests
+        
+        # 确保 jszip.js 存在：优先从 node_modules 拷贝，失败则用 curl 下载
+        cp J2ME-For-Web/node_modules/jszip/dist/jszip.min.js dist/jszip.js || \
+        curl -sL https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js -o dist/jszip.js
+
+    - name: Install tools
+      run: |
+        brew install xcodegen || true
+        brew install ldid || true
+        brew link --overwrite xcodegen ldid || true
+
+    - name: Build and Package
+      run: |
+        xcodegen generate
+        xcodebuild -project KeyCell.xcodeproj -scheme KeyCell -sdk iphoneos -configuration Release -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+        APP_PATH="DerivedData/Build/Products/Release-iphoneos/KeyCell.app"
+        
+        cp -r dist "$APP_PATH/"
+        ldid -Sentitlements.plist "$APP_PATH/KeyCell"
+        
+        mkdir -p Payload
+        cp -r "$APP_PATH" Payload/
+        zip -r KeyCell.ipa Payload
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: KeyCell-IPA
+        path: KeyCell.ipa

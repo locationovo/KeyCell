@@ -1,0 +1,25 @@
+name: KeyCell
+options:
+  bundleIdPrefix: com.locationovo
+  deploymentTarget:
+    iOS: "14.0"
+  createIntermediateGroups: true
+targets:
+  KeyCell:
+    type: application
+    platform: iOS
+    sources:
+      - path: .
+        excludes: [".git", ".github", "Payload", "DerivedData", "build", "Makefile", "project.yml", "CoreJ2", "J2ME-For-Web", "dist"]
+      - path: dist
+        type: folder
+        buildPhase: resources
+        excludes: ["tests"]
+    settings:
+      base:
+        INFOPLIST_FILE: Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.locationovo.keycell
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        SWIFT_VERSION: "5.0"
