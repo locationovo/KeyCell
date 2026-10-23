@@ -175,7 +175,6 @@ struct WebEmulatorView: UIViewRepresentable {
         """
         ucc.addUserScript(WKUserScript(source: script, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         
-        // 注入文件路径列表
         let listScript = generateFileListScript(baseURL: distURL)
         ucc.addUserScript(WKUserScript(source: listScript, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         
@@ -211,13 +210,12 @@ struct WebEmulatorView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     
     private func generateFileListScript(baseURL: URL) -> String {
-        let srcURL = baseURL.appendingPathComponent("src")
         var files: [String] = []
         
-        if let enumerator = FileManager.default.enumerator(at: srcURL, includingPropertiesForKeys: nil) {
+        if let enumerator = FileManager.default.enumerator(at: baseURL, includingPropertiesForKeys: nil) {
             for case let fileURL as URL in enumerator {
-                if fileURL.pathExtension == "js" {
-                    let relative = fileURL.path.replacingOccurrences(of: srcURL.path, with: "/src/")
+                if fileURL.pathExtension == "js" && fileURL.lastPathComponent != "jszip.js" {
+                    let relative = fileURL.path.replacingOccurrences(of: baseURL.path, with: "")
                     files.append(relative)
                 }
             }

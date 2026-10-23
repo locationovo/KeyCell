@@ -23,10 +23,28 @@
         <div class="error hidden" id="ui-error"></div>
     </div>
     <script>
+        var uiLayer = document.getElementById('ui-layer');
+        var uiSubtitle = document.getElementById('ui-subtitle');
+        var uiError = document.getElementById('ui-error');
+
+        function showError(msg) {
+            uiLayer.classList.remove('hidden');
+            uiSubtitle.innerText = "运行报错";
+            uiSubtitle.style.color = "#FF3B30";
+            uiError.innerText = msg;
+            uiError.classList.remove('hidden');
+        }
+
+        window.onerror = function(msg, url, line) {
+            showError("全局异常: " + msg + " (Line:" + line + ")");
+            return false;
+        };
+
         var rawCodeCache = {};
         var moduleCache = {};
-        
-        var FULL_OPCODES = { NOP:0, ACONST_NULL:1, ICONST_M1:2, ICONST_0:3, ICONST_1:4, ICONST_2:5, ICONST_3:6, ICONST_4:7, ICONST_5:8, LCONST_0:9, LCONST_1:10, FCONST_0:11, FCONST_1:12, FCONST_2:13, DCONST_0:14, DCONST_1:15, BIPUSH:16, SIPUSH:17, LDC:18, LDC_W:19, LDC2_W:20, ILOAD:21, LLOAD:22, FLOAD:23, DLOAD:24, ALOAD:25, ILOAD_0:26, ILOAD_1:27, ILOAD_2:28, ILOAD_3:29, LLOAD_0:30, LLOAD_1:31, LLOAD_2:32, LLOAD_3:33, FLOAD_0:34, FLOAD_1:35, FLOAD_2:36, FLOAD_3:37, DLOAD_0:38, DLOAD_1:39, DLOAD_2:40, DLOAD_3:41, ALOAD_0:42, ALOAD_1:43, ALOAD_2:44, ALOAD_3:45, IALOAD:46, LALOAD:47, FALOAD:48, DALOAD:49, AALOAD:50, BALOAD:51, CALOAD:52, SALOAD:53, ISTORE:54, LSTORE:55, FSTORE:56, DSTORE:57, ASTORE:58, ISTORE_0:59, ISTORE_1:60, ISTORE_2:61, ISTORE_3:62, LSTORE_0:63, LSTORE_1:64, LSTORE_2:65, LSTORE_3:66, FSTORE_0:67, FSTORE_1:68, FSTORE_2:69, FSTORE_3:70, DSTORE_0:71, DSTORE_1:72, DSTORE_2:73, DSTORE_3:74, ASTORE_0:75, ASTORE_1:76, ASTORE_2:77, ASTORE_3:78, IASTORE:79, LASTORE:80, FASTORE:81, DASTORE:82, AASTORE:83, BASTORE:84, CASTORE:85, SASTORE:86, POP:87, POP2:88, DUP:89, DUP_X1:90, DUP_X2:91, DUP2:92, DUP2_X1:93, DUP2_X2:94, SWAP:95, IADD:96, LADD:97, FADD:98, DADD:99, ISUB:100, LSUB:101, FSUB:102, DSUB:103, IMUL:104, LMUL:105, FMUL:106, DMUL:107, IDIV:108, LDIV:109, FDIV:110, DDIV:111, IREM:112, LREM:113, FREM:114, DREM:115, INEG:116, LNEG:117, FNEG:118, DNEG:119, ISHL:120, LSHL:121, ISHR:122, LSHR:123, IUSHR:124, LUSHR:125, IAND:126, LAND:127, IOR:128, LOR:129, IXOR:130, LXOR:131, IINC:132, I2L:133, I2F:134, I2D:135, L2I:136, L2F:137, L2D:138, F2I:139, F2L:140, F2D:141, D2I:142, D2L:143, D2F:144, I2B:145, I2C:146, I2S:147, LCMP:148, FCMPL:149, FCMPG:150, DCMPL:151, DCMPG:152, IFEQ:153, IFNE:154, IFLT:155, IFGE:156, IFGT:157, IFLE:158, IF_ICMPEQ:159, IF_ICMPNE:160, IF_ICMPLT:161, IF_ICMPGE:162, IF_ICMPGT:163, IF_ICMPLE:164, IF_ACMPEQ:165, IF_ACMPNE:166, GOTO:167, JSR:168, RET:169, TABLESWITCH:170, LOOKUPSWITCH:171, IRETURN:172, LRETURN:173, FRETURN:174, DRETURN:175, ARETURN:176, RETURN:177, GETSTATIC:178, PUTSTATIC:179, GETFIELD:180, PUTFIELD:181, INVOKEVIRTUAL:182, INVOKESPECIAL:183, INVOKESTATIC:184, INVOKEINTERFACE:185, INVOKEDYNAMIC:186, NEW:187, NEWARRAY:188, ANEWARRAY:189, ARRAYLENGTH:190, ATHROW:191, CHECKCAST:192, INSTANCEOF:193, MONITORENTER:194, MONITOREXIT:195, WIDE:196, MULTIANEWARRAY:197, IFNULL:198, IFNONNULL:199, GOTO_W:200, JSR_W:201 };
+
+        var opcodesJSON = '{"NOP":0,"ACONST_NULL":1,"ICONST_M1":2,"ICONST_0":3,"ICONST_1":4,"ICONST_2":5,"ICONST_3":6,"ICONST_4":7,"ICONST_5":8,"LCONST_0":9,"LCONST_1":10,"FCONST_0":11,"FCONST_1":12,"FCONST_2":13,"DCONST_0":14,"DCONST_1":15,"BIPUSH":16,"SIPUSH":17,"LDC":18,"LDC_W":19,"LDC2_W":20,"ILOAD":21,"LLOAD":22,"FLOAD":23,"DLOAD":24,"ALOAD":25,"ILOAD_0":26,"ILOAD_1":27,"ILOAD_2":28,"ILOAD_3":29,"LLOAD_0":30,"LLOAD_1":31,"LLOAD_2":32,"LLOAD_3":33,"FLOAD_0":34,"FLOAD_1":35,"FLOAD_2":36,"FLOAD_3":37,"DLOAD_0":38,"DLOAD_1":39,"DLOAD_2":40,"DLOAD_3":41,"ALOAD_0":42,"ALOAD_1":43,"ALOAD_2":44,"ALOAD_3":45,"IALOAD":46,"LALOAD":47,"FALOAD":48,"DALOAD":49,"AALOAD":50,"BALOAD":51,"CALOAD":52,"SALOAD":53,"ISTORE":54,"LSTORE":55,"FSTORE":56,"DSTORE":57,"ASTORE":58,"ISTORE_0":59,"ISTORE_1":60,"ISTORE_2":61,"ISTORE_3":62,"LSTORE_0":63,"LSTORE_1":64,"LSTORE_2":65,"LSTORE_3":66,"FSTORE_0":67,"FSTORE_1":68,"FSTORE_2":69,"FSTORE_3":70,"DSTORE_0":71,"DSTORE_1":72,"DSTORE_2":73,"DSTORE_3":74,"ASTORE_0":75,"ASTORE_1":76,"ASTORE_2":77,"ASTORE_3":78,"IASTORE":79,"LASTORE":80,"FASTORE":81,"DASTORE":82,"AASTORE":83,"BASTORE":84,"CASTORE":85,"SASTORE":86,"POP":87,"POP2":88,"DUP":89,"DUP_X1":90,"DUP_X2":91,"DUP2":92,"DUP2_X1":93,"DUP2_X2":94,"SWAP":95,"IADD":96,"LADD":97,"FADD":98,"DADD":99,"ISUB":100,"LSUB":101,"FSUB":102,"DSUB":103,"IMUL":104,"LMUL":105,"FMUL":106,"DMUL":107,"IDIV":108,"LDIV":109,"FDIV":110,"DDIV":111,"IREM":112,"LREM":113,"FREM":114,"DREM":115,"INEG":116,"LNEG":117,"FNEG":118,"DNEG":119,"ISHL":120,"LSHL":121,"ISHR":122,"LSHR":123,"IUSHR":124,"LUSHR":125,"IAND":126,"LAND":127,"IOR":128,"LOR":129,"IXOR":130,"LXOR":131,"IINC":132,"I2L":133,"I2F":134,"I2D":135,"L2I":136,"L2F":137,"L2D":138,"F2I":139,"F2L":140,"F2D":141,"D2I":142,"D2L":143,"D2F":144,"I2B":145,"I2C":146,"I2S":147,"LCMP":148,"FCMPL":149,"FCMPG":150,"DCMPL":151,"DCMPG":152,"IFEQ":153,"IFNE":154,"IFLT":155,"IFGE":156,"IFGT":157,"IFLE":158,"IF_ICMPEQ":159,"IF_ICMPNE":160,"IF_ICMPLT":161,"IF_ICMPGE":162,"IF_ICMPGT":163,"IF_ICMPLE":164,"IF_ACMPEQ":165,"IF_ACMPNE":166,"GOTO":167,"JSR":168,"RET":169,"TABLESWITCH":170,"LOOKUPSWITCH":171,"IRETURN":172,"LRETURN":173,"FRETURN":174,"DRETURN":175,"ARETURN":176,"RETURN":177,"GETSTATIC":178,"PUTSTATIC":179,"GETFIELD":180,"PUTFIELD":181,"INVOKEVIRTUAL":182,"INVOKESPECIAL":183,"INVOKESTATIC":184,"INVOKEINTERFACE":185,"INVOKEDYNAMIC":186,"NEW":187,"NEWARRAY":188,"ANEWARRAY":189,"ARRAYLENGTH":190,"ATHROW":191,"CHECKCAST":192,"INSTANCEOF":193,"MONITORENTER":194,"MONITOREXIT":195,"WIDE":196,"MULTIANEWARRAY":197,"IFNULL":198,"IFNONNULL":199,"GOTO_W":200,"JSR_W":201}';
+        var FULL_OPCODES = JSON.parse(opcodesJSON);
         
         function resolvePath(path, basePath) {
             if (path.indexOf('.') !== 0) {
@@ -58,10 +76,7 @@
 
             var code = rawCodeCache[rp];
             if (!code) {
-                // 如果因为某些原因没加载，返回一个带执行信息的空壳，但会打日志
-                console.warn("找不到模块源码，返回空壳: " + rp);
-                moduleCache[rp] = { exports: {} };
-                return moduleCache[rp].exports;
+                throw new Error("找不到模块源码: " + rp);
             }
 
             var module = { exports: {} };
@@ -74,6 +89,7 @@
             
             var func = new Function('require', 'module', 'exports', 'window', 'global', code);
             func(localRequire, module, module.exports, window, window);
+            
             return module.exports;
         }
 
@@ -91,20 +107,8 @@
             });
         }
         
-        var uiLayer = document.getElementById('ui-layer');
-        var uiSubtitle = document.getElementById('ui-subtitle');
-        var uiError = document.getElementById('ui-error');
         var isBooted = false, isBooting = false;
-        var globalLauncher = null;
 
-        function showError(msg) {
-            uiLayer.classList.remove('hidden');
-            uiSubtitle.innerText = "运行报错";
-            uiSubtitle.style.color = "#FF3B30";
-            uiError.innerText = msg;
-            uiError.classList.remove('hidden');
-        }
-        
         window.setResolution = function(w, h) {
             var canvas = document.getElementById('screen');
             if (canvas) { canvas.width = w; canvas.height = h; }
@@ -115,40 +119,45 @@
             if (isBooted || isBooting) return;
             isBooting = true;
             uiError.classList.add('hidden');
-            uiSubtitle.innerText = "正在全量下载核心组件...";
-
-            if (!window.J2MEFilesList || window.J2MEFilesList.length === 0) {
-                showError("未收到 J2MEFilesList");
-                return;
-            }
-
+            
             var list = window.J2MEFilesList;
-            var promises = [];
-            for (var i = 0; i < list.length; i++) {
-                (function(path) {
-                    promises.push(asyncXHR('keycell://local' + path, 'text').then(function(code) {
-                        rawCodeCache[path] = code;
-                    }).catch(function(err) {
-                        console.error("下载失败: " + path);
-                    }));
-                })(list[i]);
+            var currentIndex = 0;
+
+            function downloadNext() {
+                if (currentIndex >= list.length) {
+                    startVM();
+                    return;
+                }
+                var path = list[currentIndex];
+                uiSubtitle.innerText = "正在加载组件 " + (currentIndex + 1) + "/" + list.length + "...\n" + path;
+                
+                asyncXHR('keycell://local' + path, 'text').then(function(code) {
+                    rawCodeCache[path] = code;
+                    currentIndex++;
+                    downloadNext();
+                }).catch(function(err) {
+                    currentIndex++;
+                    downloadNext();
+                });
             }
 
-            Promise.all(promises).then(function() {
+            function startVM() {
+                console.log("所有组件下载完毕，开始启动。");
                 uiSubtitle.innerText = "正在启动虚拟机...";
-                try {
-                    var LauncherMod = requireModule('./game-modules/launcher/Launcher');
-                    var JarLoaderMod = requireModule('./game-modules/loader/JarLoader');
-                    var InstructionMod = requireModule('./vm-core/interpreter/instruction');
-                    var InterpreterMod = requireModule('./vm-core/interpreter/interpreter');
-                    var ThreadMod = requireModule('./vm-core/threading/thread');
-                    
-                    var Launcher = LauncherMod.Launcher;
-                    var JarLoader = JarLoaderMod.JarLoader;
-                    var Registry = InstructionMod.InstructionRegistry;
-                    var Interpreter = InterpreterMod.Interpreter;
-                    var Thread = ThreadMod.Thread;
+                
+                console.log("1: 加载模块...");
+                var LauncherMod = requireModule('./game-modules/launcher/Launcher');
+                var InstructionMod = requireModule('./vm-core/interpreter/instruction');
+                var InterpreterMod = requireModule('./vm-core/interpreter/interpreter');
+                var ThreadMod = requireModule('./vm-core/threading/thread');
+                
+                var Launcher = LauncherMod.Launcher;
+                var Registry = InstructionMod.InstructionRegistry;
+                var Interpreter = InterpreterMod.Interpreter;
+                var Thread = ThreadMod.Thread;
+                console.log("2: 模块加载完毕。");
 
+                if (Thread) {
                     var origStart = Thread.prototype.start;
                     Thread.prototype.start = function() {
                         console.log("拦截到新 Thread.start()!");
@@ -162,77 +171,98 @@
                         }
                         step();
                     };
+                }
 
+                if (Registry) {
                     var origGet = Registry.get;
                     Registry.get = function(opcode) {
                         var handler = origGet.call(Registry, opcode);
                         return function(frame, thread) {
                             if (handler) handler(frame, thread);
-                            else { 
-                                console.warn("未实现指令: " + opcode.toString(16));
-                                frame.pc++; 
-                            }
+                            else { frame.pc++; }
                         };
                     };
-
-                    var origGetFile = JarLoader.prototype.getFile;
-                    JarLoader.prototype.getFile = function(path) {
-                        var res = origGetFile.call(this, path);
-                        if (res) return res;
-                        var target = path.replace(/\\/g, '/').trim();
-                        if (target.indexOf('/') === -1) {
-                            if (!target.endsWith('.class')) target += '.class';
-                            target = target.replace(/\./g, '/');
-                            target = target.substring(0, target.length - 6) + '.class';
-                        }
-                        target = target.toLowerCase().replace(/^\.\//, '').replace(/^\//, '');
-                        if (this.files && typeof this.files.keys === 'function') {
-                            var keys = Array.from(this.files.keys());
-                            for (var i=0; i<keys.length; i++) {
-                                var cleanKey = keys[i].replace(/\\/g, '/').trim().toLowerCase().replace(/^\.\//, '').replace(/^\//, '');
-                                if (cleanKey === target) return this.files.get(keys[i]);
-                            }
-                        }
-                        return res;
-                    };
-
-                    return asyncXHR('keycell://local/game.jar', 'arraybuffer').then(function(arrayBuffer) {
-                        globalLauncher = new Launcher({ jarData: arrayBuffer });
-                        return globalLauncher.load().then(function() {
-                            var origGetMainClass = globalLauncher.getMainClassName.bind(globalLauncher);
-                            globalLauncher.getMainClassName = function() {
-                                var mc = origGetMainClass();
-                                if (mc) {
-                                    mc = mc.replace(/\\/g, '/').trim();
-                                    if (mc.endsWith('.class')) mc = mc.substring(0, mc.length - 6);
-                                    return mc.replace(/\./g, '/');
-                                }
-                                return mc;
-                            };
-                            globalLauncher.start();
-                            isBooted = true;
-                            uiLayer.classList.add('hidden');
-
-                            setInterval(function() {
-                                var j2meCanvas = document.getElementById('j2me-canvas');
-                                if (j2meCanvas && !window.__canvasMounted) {
-                                    window.__canvasMounted = true;
-                                    j2meCanvas.style.position = 'absolute';
-                                    j2meCanvas.style.top = '0';
-                                    j2meCanvas.style.left = '0';
-                                    j2meCanvas.style.width = '100%';
-                                    j2meCanvas.style.height = '100%';
-                                    j2meCanvas.style.objectFit = 'contain';
-                                    j2meCanvas.style.zIndex = '1';
-                                }
-                            }, 500);
-                        });
-                    });
-                } catch(e) {
-                    isBooting = false;
-                    showError(e.message + "\n" + (e.stack || ""));
                 }
-            });
+
+                console.log("3: 请求 JAR...");
+                asyncXHR('keycell://local/game.jar', 'arraybuffer').then(function(arrayBuffer) {
+                    console.log("4: JAR 下载完毕，长度: " + arrayBuffer.byteLength);
+                    
+                    if (!window.JSZip) {
+                        throw new Error("window.JSZip 未定义！请检查 dist 目录下是否有 jszip.js");
+                    }
+
+                    console.log("5: 开始解压 JAR...");
+                    window.JSZip.loadAsync(arrayBuffer).then(function(zip) {
+                        console.log("6: JAR 解压成功，共包含 " + Object.keys(zip.files).length + " 个文件");
+                        
+                        var customLoader = {
+                            files: {},
+                            fileExists: function(path) { return !!this.files[path]; },
+                            getFile: function(path) { return this.files[path]; }
+                        };
+
+                        var promises = [];
+                        zip.forEach(function (relativePath, file) {
+                            if (!file.dir) {
+                                promises.push(file.async("uint8array").then(function(content) {
+                                    customLoader.files[relativePath] = content;
+                                }));
+                            }
+                        });
+
+                        Promise.all(promises).then(function() {
+                            console.log("7: 文件提取完毕，共 " + Object.keys(customLoader.files).length + " 个");
+                            uiSubtitle.innerText = "正在加载系统类...";
+                            
+                            if (!Launcher) {
+                                throw new Error("Launcher 依然未被正确导出。请检查日志中的“找不到模块源码”。");
+                            }
+                            
+                            console.log("8: 创建官方 Launcher 实例");
+                            var launcher = new Launcher({ jarData: new ArrayBuffer(0) });
+                            
+                            console.log("9: 将自定义 loader 替换给 Launcher");
+                            launcher.loader = customLoader;
+                            
+                            console.log("10: 调用 Launcher.start()");
+                            try {
+                                launcher.start();
+                                isBooted = true;
+                                uiLayer.classList.add('hidden');
+                                
+                                setInterval(function() {
+                                    var j2meCanvas = document.getElementById('j2me-canvas');
+                                    if (j2meCanvas && !window.__canvasMounted) {
+                                        window.__canvasMounted = true;
+                                        j2meCanvas.style.position = 'absolute';
+                                        j2meCanvas.style.top = '0';
+                                        j2meCanvas.style.left = '0';
+                                        j2meCanvas.style.width = '100%';
+                                        j2meCanvas.style.height = '100%';
+                                        j2meCanvas.style.objectFit = 'contain';
+                                        j2meCanvas.style.zIndex = '1';
+                                    }
+                                }, 500);
+                            } catch(e) {
+                                console.error("start 失败: " + e.message);
+                                showError("start 失败: " + e.message + "\n" + e.stack);
+                            }
+                        }).catch(function(err) {
+                            console.error("解压文件失败: " + err.message);
+                            showError("解压文件失败: " + err.message);
+                        });
+                    }).catch(function(err) {
+                        console.error("JSZip 解压失败: " + err.message);
+                        showError("JSZip 解压失败: " + err.message);
+                    });
+                }).catch(function(err) {
+                    console.error("请求 JAR 失败: " + err.message);
+                    showError("请求 JAR 失败: " + err.message);
+                });
+            }
+
+            downloadNext();
         };
         
         window.onKeyPress = function(key) {
